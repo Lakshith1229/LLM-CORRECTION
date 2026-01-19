@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-# Install system dependencies
+# Install system dependencies for OCR & PDF
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     poppler-utils \
@@ -8,27 +8,15 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy requirements first to leverage cache
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy ALL files (simple & safe)
+COPY . .
 
-# Download translation models
-COPY scripts/download_models.py scripts/
-RUN python scripts/download_models.py
+# Install Python dependencies
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY src/ src/
-COPY static/ static/
-COPY templates/ templates/
+# Expose Render port
+EXPOSE 10000
 
-# Set environment variables
-ENV FLASK_APP=src/app.py
-ENV PYTHONUNBUFFERED=1
-ENV UPLOAD_FOLDER=/app/uploads
-
-# Create upload directory
-RUN mkdir -p /app/uploads
-
-EXPOSE 5000
-
-CMD ["python", "src/app.py"]
+# Start app
+CMD ["python", "server.py"]
